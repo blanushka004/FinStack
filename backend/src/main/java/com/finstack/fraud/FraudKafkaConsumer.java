@@ -1,0 +1,3 @@
+package com.finstack.fraud;
+import com.finstack.event.*; import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty; import org.springframework.kafka.annotation.KafkaListener; import org.springframework.stereotype.Component;
+@Component @ConditionalOnProperty(prefix="app.kafka",name="enabled",havingValue="true") public class FraudKafkaConsumer { private final FraudDetectionService service; public FraudKafkaConsumer(FraudDetectionService s){service=s;} @KafkaListener(topics="${app.kafka.transaction-topic}",groupId="${app.kafka.fraud-group:finstack-fraud}") public void consume(TransactionEvent event){service.assess(event);} }

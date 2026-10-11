@@ -1,0 +1,3 @@
+package com.finstack.budget;
+import com.finstack.alert.AlertNotFoundException; import com.finstack.auth.ApiError; import org.springframework.http.*; import org.springframework.web.bind.annotation.*; import java.util.*;
+@RestControllerAdvice public class BudgetAlertExceptionHandler {@ExceptionHandler({BudgetNotFoundException.class,AlertNotFoundException.class}) ResponseEntity<ApiError> notFound(){return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiError("RESOURCE_NOT_FOUND","Resource was not found",Map.of()));}@ExceptionHandler(InvalidBudgetException.class) ResponseEntity<ApiError> invalid(){return ResponseEntity.badRequest().body(new ApiError("INVALID_BUDGET","Budget details are invalid",Map.of()));}}

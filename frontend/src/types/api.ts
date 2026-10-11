@@ -1,0 +1,12 @@
+export type ApiError = { code: string; message: string; fieldErrors?: Record<string, string> }
+export type User = { id: string; firstName: string; lastName: string; email: string; status: string; emailVerified: boolean; roles: string[] }
+export type AuthResponse = { accessToken: string; tokenType: string; expiresIn: number; user: User }
+export type Account = { id: string; name: string; accountType: string; institutionName?: string; currency: string; currentBalance: number; creditLimit?: number; active: boolean }
+export type Category = { id: string; name: string; categoryType: 'INCOME' | 'EXPENSE'; systemDefined: boolean }
+export type Transaction = { id: string; accountId: string; accountName: string; categoryId?: string; categoryName?: string; transactionType: 'INCOME' | 'EXPENSE'; amount: number; merchant?: string; description?: string; transactionTime: string; status: string }
+export type Page<T> = { content: T[]; totalPages: number; totalElements: number; number: number }
+export type Budget = { id: string; name: string; budgetMonth: string; totalLimit: number; warningThresholdPercent: number; active: boolean }
+export type Alert = { id: string; alertType: string; severity: string; title: string; message: string; read: boolean; createdAt: string }
+export type Dashboard = { totalBalance: number; totalIncome: number; totalExpenses: number; netCashFlow: number; activeAccounts: number; activeBudgets: number; unreadAlerts: number }
+export type DashboardAnalytics = { cashFlowTrend: { month: string; income: number; expenses: number; netCashFlow: number }[]; categorySpending: { categoryId?: string; categoryName: string; amount: number }[] }
+export type FraudSummary = { lowRisk: number; mediumRisk: number; highRisk: number; suspicious: number }

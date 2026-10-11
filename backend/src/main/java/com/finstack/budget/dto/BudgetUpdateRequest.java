@@ -1,0 +1,3 @@
+package com.finstack.budget.dto;
+import jakarta.validation.Valid; import jakarta.validation.constraints.*; import java.math.BigDecimal; import java.time.LocalDate; import java.util.*;
+public record BudgetUpdateRequest(@NotBlank @Size(max=120) String name,@NotNull LocalDate budgetMonth,@NotNull @DecimalMin(value="0.00",inclusive=false) @Digits(integer=17,fraction=2) BigDecimal totalLimit,@Min(1) @Max(100) Integer warningThresholdPercent,@Valid List<BudgetCategoryRequest> categoryLimits){public BudgetUpdateRequest{name=name==null?null:name.trim();warningThresholdPercent=warningThresholdPercent==null?80:warningThresholdPercent;categoryLimits=categoryLimits==null?List.of():List.copyOf(categoryLimits);}}
