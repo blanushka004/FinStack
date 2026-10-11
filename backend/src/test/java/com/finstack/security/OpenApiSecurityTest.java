@@ -20,6 +20,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -42,7 +44,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 })
 @TestPropertySource(properties = {
         "jwt.secret=test-secret-that-is-at-least-thirty-two-bytes-long",
-        "jwt.access-token-expiration-ms=3600000"
+        "jwt.access-token-expiration-ms=3600000",
+        "app.email-verification.frontend-base-url=https://finstack-demo.vercel.app"
 })
 class OpenApiSecurityTest {
 
@@ -77,5 +80,19 @@ class OpenApiSecurityTest {
     void keepsProtectedRoutesUnauthorizedWithoutJwt() throws Exception {
         mockMvc.perform(get("/api/v1/transactions"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void permitsOnlyConfiguredFrontendOriginForBrowserPreflight() throws Exception {
+        mockMvc.perform(options("/api/v1/accounts")
+                        .header("Origin", "https://finstack-demo.vercel.app")
+                        .header("Access-Control-Request-Method", "POST")
+                        .header("Access-Control-Request-Headers", "authorization,content-type,idempotency-key"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", "https://finstack-demo.vercel.app"));
+        mockMvc.perform(options("/api/v1/accounts")
+                        .header("Origin", "https://untrusted.example")
+                        .header("Access-Control-Request-Method", "POST"))
+                .andExpect(status().isForbidden());
     }
 }

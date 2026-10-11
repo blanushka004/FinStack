@@ -1,0 +1,11 @@
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+app:
+  email-verification:
+    development-log-link: false
+  password-reset:
+    development-log-link: false

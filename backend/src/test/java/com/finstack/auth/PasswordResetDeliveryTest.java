@@ -59,6 +59,40 @@ class PasswordResetDeliveryTest {
         }
     }
 
+    @Test void verificationLinksAreNotLoggedOutsideExplicitLoopbackDevelopmentMode() {
+        MockEnvironment environment = new MockEnvironment().withProperty("server.address", "0.0.0.0");
+        environment.setActiveProfiles("prod");
+        assertThat(verificationLogFor(environment, "https://finstack-demo.vercel.app"))
+                .doesNotContain("verify-email?token=");
+        environment.setActiveProfiles("dev");
+        assertThat(verificationLogFor(environment, "http://localhost:5173"))
+                .doesNotContain("verify-email?token=");
+        environment.withProperty("server.address", "127.0.0.1");
+        assertThat(verificationLogFor(environment, "http://localhost:5173"))
+                .contains("DEV ONLY email verification link");
+    }
+
+    private String verificationLogFor(MockEnvironment environment, String frontendUrl) {
+        Logger logger = (Logger) LoggerFactory.getLogger(EmailDeliveryService.class);
+        ListAppender<ILoggingEvent> events = new ListAppender<>();
+        events.start();
+        boolean additive = logger.isAdditive();
+        logger.setAdditive(false);
+        logger.addAppender(events);
+        try {
+            @SuppressWarnings("unchecked") ObjectProvider<JavaMailSender> sender = mock(ObjectProvider.class);
+            EmailDeliveryService service = new EmailDeliveryService(sender,
+                    new EmailVerificationProperties(30, frontendUrl, true),
+                    new PasswordResetProperties(30, false), environment, "", "");
+            service.sendVerification(USER, "test-token");
+            return events.list.stream().map(ILoggingEvent::getFormattedMessage).reduce("", (a, b) -> a + b);
+        } finally {
+            logger.detachAppender(events);
+            logger.setAdditive(additive);
+            events.stop();
+        }
+    }
+
     private String logFor(MockEnvironment environment, boolean enabled) {
         Logger logger = (Logger) LoggerFactory.getLogger(EmailDeliveryService.class);
         ListAppender<ILoggingEvent> events = new ListAppender<>();

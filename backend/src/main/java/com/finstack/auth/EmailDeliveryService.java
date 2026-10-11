@@ -29,10 +29,13 @@ public class EmailDeliveryService {
     public void sendVerification(User user, String rawToken) {
         String link = properties.frontendBaseUrl().replaceAll("/$", "") + "/verify-email?token=" + rawToken;
         JavaMailSender sender = mailSender.getIfAvailable();
-        if (sender != null && !from.isBlank()) {
-            SimpleMailMessage message = new SimpleMailMessage(); message.setTo(user.getEmail()); message.setFrom(from); message.setSubject("Verify your FinStack email"); message.setText("Verify your FinStack email: " + link); sender.send(message); return;
+        if (sender != null && !from.isBlank() && !mailHost.isBlank()) {
+            SimpleMailMessage message = new SimpleMailMessage(); message.setTo(user.getEmail()); message.setFrom(from); message.setSubject("Verify your FinStack email"); message.setText("Verify your FinStack email: " + link);
+            try { sender.send(message); } catch (RuntimeException exception) { log.warn("Email verification delivery failed for user {}", user.getId()); }
+            return;
         }
-        if (properties.developmentLogLink()) log.info("Email verification link for {}: {}", user.getEmail(), link);
+        if (properties.developmentLogLink() && localDevelopmentLinkAllowed(properties.frontendBaseUrl()))
+            log.info("DEV ONLY email verification link for user {}: {}", user.getId(), link);
         else log.warn("Email verification delivery is not configured for user {}", user.getId());
     }
     public void sendPasswordReset(User user, String rawToken) {
@@ -46,14 +49,18 @@ public class EmailDeliveryService {
             try { sender.send(mail); } catch (RuntimeException exception) { log.warn("Password reset email delivery failed for user {}", user.getId()); }
             return;
         }
-        URI frontend = URI.create(base);
-        boolean loopback = "localhost".equalsIgnoreCase(frontend.getHost()) || "127.0.0.1".equals(frontend.getHost());
-        String bindAddress = environment.getProperty("server.address", "0.0.0.0");
-        boolean localServer = "localhost".equalsIgnoreCase(bindAddress) || "127.0.0.1".equals(bindAddress);
-        if (resetProperties.developmentLogLink() && environment.acceptsProfiles(Profiles.of("dev")) && loopback && localServer) {
+        if (resetProperties.developmentLogLink() && localDevelopmentLinkAllowed(base)) {
             log.info("DEV ONLY password reset link for user {}: {}", user.getId(), link);
         } else {
             log.warn("Password reset delivery is not configured for user {}", user.getId());
         }
+    }
+
+    private boolean localDevelopmentLinkAllowed(String base) {
+        URI frontend = URI.create(base);
+        boolean loopback = "localhost".equalsIgnoreCase(frontend.getHost()) || "127.0.0.1".equals(frontend.getHost());
+        String bindAddress = environment.getProperty("server.address", "0.0.0.0");
+        boolean localServer = "localhost".equalsIgnoreCase(bindAddress) || "127.0.0.1".equals(bindAddress);
+        return environment.acceptsProfiles(Profiles.of("dev")) && loopback && localServer;
     }
 }
